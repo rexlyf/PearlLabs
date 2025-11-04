@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Animated Perle Labs Contributor Simulator</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Three.js for 3D graphics -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        
+        /* Base Styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d131f; /* Deeper dark background */
+        }
+        .dashboard-card {
+            background-color: #1f2937;
+            border: 1px solid #374151;
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.5), 0 4px 10px -2px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* --- Custom CSS Animations --- */
+        @keyframes flash-metric {
+            0% { transform: scale(1); color: inherit; text-shadow: none; }
+            50% { transform: scale(1.1); color: #818cf8; text-shadow: 0 0 10px rgba(129, 140, 248, 1); } 
+            100% { transform: scale(1); color: inherit; text-shadow: none; }
+        }
+        .flash {
+            animation: flash-metric 0.4s ease-out;
+        }
+
+        /* 3D Container Styling */
+        #visualization-container {
+            width: 100%;
+            height: 300px;
+            min-height: 250px;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background-color: #0f172a; /* Dark background for canvas */
+            position: relative;
+        }
+        canvas {
+            display: block;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <div id="app" class="min-h-screen p-4 sm:p-8 flex flex-col items-center">
+        <!-- Header -->
+        <header class="w-full max-w-5xl text-center mb-10">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-indigo-400 tracking-tight">
+                Perle Labs: 3D Contributor Interface
+            </h1>
+            <p class="text-gray-500 mt-2 text-sm sm:text-base">Visualize the **Web3 Data Orb** processing your human input.</p>
+        </header>
+
+        <!-- Main Content Grid -->
+        <div class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- METRICS PANEL (Col 1) -->
+            <div class="lg:col-span-1 space-y-6">
+                <div id="metrics-card" class="dashboard-card p-6 rounded-xl text-gray-200">
+                    <h2 class="text-xl font-bold text-indigo-400 mb-6 border-b border-gray-700 pb-3">On-Chain Reputation Metrics</h2>
+                    
+                    <div class="space-y-5">
+                        <!-- Metrics content remains the same, relying on JS for the 'flash' class -->
+                        <div class="flex justify-between items-center text-sm font-medium">
+                            <span class="text-gray-400 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.618a8.625 8.625 0 011.97 4.09 8.625 8.625 0 01-1.97 4.09L12 21.418l-8.618-4.918a8.625 8.625 0 01-1.97-4.09 8.625 8.625 0 011.97-4.09L12 2.582l8.618 4.918z"></path></svg>
+                                Tasks Verified
+                            </span>
+                            <span id="tasks-completed" class="text-3xl font-extrabold text-indigo-300">0</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center text-sm font-medium">
+                            <span class="text-gray-400 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                Accuracy Rate
+                            </span>
+                            <span id="accuracy-rate" class="text-3xl font-extrabold text-green-400">0.00%</span>
+                        </div>
+
+                        <div class="flex justify-between items-center text-sm font-medium">
+                            <span class="text-gray-400 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.152A1 1 0 009.256 2.025l-2.75 4.546-4.985.696a1 1 0 00-.547 1.761l3.626 3.535-.855 4.965a1 1 0 001.45 1.053L12 18.067l4.47 2.345a1 1 0 001.45-1.053l-.855-4.965 3.626-3.535a1 1 0 00-.547-1.761l-4.985-.696-2.75-4.546a1 1 0 00-1.792-.127z"></path></svg>
+                                Reputation Score
+                            </span>
+                            <span id="reputation-score" class="text-3xl font-extrabold text-yellow-400">0</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-6 border-t border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-300">Current Contributor Tier:</h3>
+                        <p id="contributor-tier" class="text-2xl font-extrabold text-purple-400 mt-2">Novice Annotator</p>
+                        <p class="text-xs text-gray-500 mt-1">Tier unlocks access to higher-reward, specialized data streams.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TASK/VISUALIZATION PANEL (Col 2-3) -->
+            <div class="lg:col-span-2">
+                <div id="task-card" class="dashboard-card p-6 rounded-xl relative text-gray-200">
+                    
+                    <h2 class="text-2xl font-bold text-gray-200 mb-4">Verification Node & Data Input</h2>
+                    
+                    <!-- 3D Visualization Area -->
+                    <div id="visualization-container" class="mb-6 rounded-lg">
+                        <!-- Three.js canvas will be injected here -->
+                    </div>
+
+                    <!-- Data Snippet Box -->
+                    <p class="text-gray-400 mb-4">Current Annotation Task:</p>
+                    <div class="bg-gray-800 p-4 rounded-lg border-l-4 border-indigo-500 mb-6 shadow-inner">
+                        <p id="task-text" class="text-lg font-mono text-gray-100 italic">Initializing data stream...</p>
+                    </div>
+
+                    <!-- User Input -->
+                    <div id="task-controls" class="space-y-4">
+                        <p class="text-md font-semibold text-gray-300">Select the correct classification:</p>
+                        <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                            <button onclick="submitAnnotation('Positive')" class="button-primary flex-1 py-3 px-4 bg-green-600 text-white font-extrabold rounded-xl shadow-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-500">
+                                POSITIVE
+                            </button>
+                            <button onclick="submitAnnotation('Negative')" class="button-primary flex-1 py-3 px-4 bg-red-600 text-white font-extrabold rounded-xl shadow-lg hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-500">
+                                NEGATIVE
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Feedback Message -->
+                    <div id="feedback-message" class="mt-6 p-4 rounded-xl text-center font-semibold transition-all duration-300 hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="w-full max-w-5xl text-center mt-12 pt-6 border-t border-gray-700">
+            <p class="text-xs text-gray-500">
+                The Perle Labs model: **Expert Human Judgment** $\rightarrow$ **Blockchain-Verified Work** $\rightarrow$ **Verifiable On-Chain Reputation**.
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // --- 3D VISUALIZATION SETUP (THREE.JS) ---
+        let scene, camera, renderer, cube, wireframeMaterial;
+        const defaultColor = 0x6366f1; // Tailwind Indigo-500
+
+        function init3D() {
+            const container = document.getElementById('visualization-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+
+            renderer.setSize(width, height);
+            container.appendChild(renderer.domElement);
+
+            // Create the main Data Orb (Wireframe Geometry)
+            const geometry = new THREE.IcosahedronGeometry(3, 1);
+            wireframeMaterial = new THREE.MeshBasicMaterial({
+                color: defaultColor,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.8
+            });
+            cube = new THREE.Mesh(geometry, wireframeMaterial);
+            scene.add(cube);
+
+            // Add subtle ambient light
+            const ambientLight = new THREE.AmbientLight(0x404040, 5); // soft white light
+            scene.add(ambientLight);
+
+            camera.position.z = 5;
+
+            // Handle resizing
+            window.addEventListener('resize', onWindowResize, false);
+            function onWindowResize() {
+                const newWidth = container.clientWidth;
+                const newHeight = container.clientHeight;
+                camera.aspect = newWidth / newHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(newWidth, newHeight);
+            }
+        }
+
+        // Animation loop for the 3D scene
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Rotate the Data Orb
+            cube.rotation.x += 0.005;
+            cube.rotation.y += 0.008;
+
+            // Apply pulse effect during verification
+            if (isProcessing) {
+                const scaleFactor = 1.0 + 0.1 * Math.sin(Date.now() * 0.008);
+                cube.scale.set(scaleFactor, scaleFactor, scaleFactor);
+            } else {
+                cube.scale.set(1, 1, 1);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Controls the color and state of the 3D Orb based on verification result
+        function setOrbState(status) {
+            let color;
+            if (status === 'success') {
+                color = 0x10b981; // Green
+            } else if (status === 'error') {
+                color = 0xef4444; // Red
+            } else {
+                color = defaultColor; // Default Indigo
+            }
+            wireframeMaterial.color.setHex(color);
+        }
+
+        // --- SIMULATION LOGIC ---
+        let state = {
+            totalTasks: 0,
+            correctTasks: 0,
+            reputationScore: 0,
+            currentTask: null,
+            targetAnswer: null
+        };
+        let isProcessing = false; // Flag for 3D animation pulse
+
+        const taskData = [
+            { text: "The decentralized infrastructure proved robust and highly scalable under load.", answer: "Positive" },
+            { text: "The recent tokenomics adjustment caused significant concern in the community.", answer: "Negative" },
+            { text: "I received the reward instantly, confirming the system's promised transparency.", answer: "Positive" },
+            { text: "The expert review process flagged several major inconsistencies in the dataset.", answer: "Negative" },
+            { text: "This project sets a new standard for verifiable, high-quality data annotation.", answer: "Positive" },
+            { text: "The network suffered a brief outage, temporarily pausing all annotation jobs.", answer: "Negative" },
+            { text: "The new UI is intuitive and dramatically increased our daily contribution rate.", answer: "Positive" },
+            { text: "The complexity of the task exceeded the provided training materials.", answer: "Negative" },
+            { text: "The human feedback loop successfully eliminated subtle bias from the model.", answer: "Positive" },
+            { text: "The high gas fees on the settlement layer made micro-contributions uneconomical.", answer: "Negative" }
+        ];
+
+        // --- UTILITY FUNCTIONS ---
+        function applyFlash(elementId) {
+            const el = document.getElementById(elementId);
+            el.classList.add('flash');
+            setTimeout(() => {
+                el.classList.remove('flash');
+            }, 500);
+        }
+
+        function fetchNewTask() {
+            const taskTextElement = document.getElementById('task-text');
+            taskTextElement.style.opacity = '0';
+            
+            setTimeout(() => {
+                const randomIndex = Math.floor(Math.random() * taskData.length);
+                state.currentTask = taskData[randomIndex].text;
+                state.targetAnswer = taskData[randomIndex].answer;
+                taskTextElement.textContent = state.currentTask;
+                taskTextElement.style.opacity = '1';
+            }, 300);
+        }
+
+        function simulateQA(userAnswer) {
+            const isUserCorrect = userAnswer === state.targetAnswer;
+
+            if (isUserCorrect) {
+                return Math.random() < 0.85; 
+            } else {
+                return Math.random() < 0.15; 
+            }
+        }
+
+        function updateMetrics() {
+            const oldReputation = parseInt(document.getElementById('reputation-score').textContent);
+            const accuracy = state.totalTasks > 0 
+                ? ((state.correctTasks / state.totalTasks) * 100).toFixed(2) 
+                : '0.00';
+
+            // Apply flash animation when metrics change
+            if (state.totalTasks > parseInt(document.getElementById('tasks-completed').textContent)) {
+                applyFlash('tasks-completed');
+            }
+            if (state.reputationScore !== oldReputation) {
+                applyFlash('reputation-score');
+            }
+            applyFlash('accuracy-rate');
+
+
+            document.getElementById('tasks-completed').textContent = state.totalTasks;
+            document.getElementById('accuracy-rate').textContent = `${accuracy}%`;
+            document.getElementById('reputation-score').textContent = state.reputationScore;
+            
+            let tier = 'Novice Annotator';
+            let tierColor = 'text-gray-400';
+            const accNum = parseFloat(accuracy);
+
+            if (state.totalTasks >= 5 && accNum >= 70) {
+                tier = 'Verified Contributor';
+                tierColor = 'text-blue-400';
+            }
+            if (state.totalTasks >= 15 && accNum >= 80) {
+                tier = 'Expert Validator';
+                tierColor = 'text-purple-400';
+            }
+            if (state.totalTasks >= 30 && accNum >= 90) {
+                 tier = 'Domain Master (Top Rewards)';
+                tierColor = 'text-yellow-400';
+            }
+
+            const tierElement = document.getElementById('contributor-tier');
+            tierElement.textContent = tier;
+            tierElement.className = `text-2xl font-extrabold mt-2 ${tierColor}`;
+        }
+        
+        function showFeedback(message, type) {
+            const feedbackElement = document.getElementById('feedback-message');
+            feedbackElement.textContent = message;
+            
+            feedbackElement.classList.remove('hidden', 'bg-red-900', 'text-red-300', 'bg-green-900', 'text-green-300', 'shadow-md', 'shadow-green-900/50', 'shadow-red-900/50');
+            feedbackElement.classList.add('font-semibold');
+
+            if (type === 'success') {
+                feedbackElement.classList.add('bg-green-900', 'text-green-300', 'shadow-md', 'shadow-green-900/50');
+            } else {
+                feedbackElement.classList.add('bg-red-900', 'text-red-300', 'shadow-md', 'shadow-red-900/50');
+            }
+            
+            feedbackElement.classList.remove('hidden');
+
+            setTimeout(() => {
+                feedbackElement.classList.add('hidden');
+            }, 4000);
+        }
+
+        // --- MAIN WORKFLOW FUNCTION ---
+        function submitAnnotation(userAnswer) {
+            // 1. Disable controls and set 3D processing state
+            document.getElementById('task-controls').style.pointerEvents = 'none';
+            isProcessing = true;
+            setOrbState('processing'); // Set orb to default color with pulse
+
+            // 2. Simulate the time delay for the "on-chain" QA/verification process
+            setTimeout(() => {
+                state.totalTasks++;
+                const isVerifiedCorrect = simulateQA(userAnswer);
+
+                if (isVerifiedCorrect) {
+                    state.correctTasks++;
+                    const points = 5;
+                    state.reputationScore += points; 
+                    showFeedback(`✅ VERIFIED! Work is on-chain. +${points} Reputation Points.`, 'success');
+                    setOrbState('success'); // Flash green
+                } else {
+                    const points = 1; 
+                    state.reputationScore = Math.max(0, state.reputationScore + points); 
+                    showFeedback(`❌ VERIFICATION FAILURE. Work requires review. +${points} Point (Low Rep).`, 'error');
+                    setOrbState('error'); // Flash red
+                }
+
+                updateMetrics();
+                fetchNewTask();
+
+                // 3. Remove processing state and re-enable controls
+                isProcessing = false;
+                document.getElementById('task-controls').style.pointerEvents = 'auto';
+                
+                // Return orb to default color after a short delay
+                setTimeout(() => {
+                    setOrbState('default');
+                }, 1000); 
+
+            }, 2500); // 2.5 seconds simulated processing time
+        }
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            if (typeof THREE !== 'undefined') {
+                init3D();
+                animate();
+            } else {
+                console.error("Three.js not loaded. Cannot initialize 3D visualization.");
+            }
+            fetchNewTask();
+            updateMetrics();
+        };
+
+    </script>
+</body>
+</html>
+
